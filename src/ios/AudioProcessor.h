@@ -3,6 +3,7 @@
 
 @interface AudioProcessor : CDVPlugin  
 - (void) doIt:(CDVInvokedUrlCommand*)command;
+- (void) test;
 
 @end
 
