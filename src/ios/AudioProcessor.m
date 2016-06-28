@@ -15,6 +15,9 @@
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void)test {
+
+
 
 @end
 
