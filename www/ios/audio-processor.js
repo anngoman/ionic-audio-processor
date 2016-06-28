@@ -7,8 +7,8 @@ var argscheck = require('cordova/argscheck'),
 var AudioProcessor = function() {
 };
 
-AudioProcessor.close = function() {
-    exec(null, null, "Keyboard", "close", []);
+AudioProcessor.doIt = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "AudioProcessor", "doIt", []]);
 };
 
 module.exports = AudioProcessor;
