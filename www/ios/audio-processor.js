@@ -11,6 +11,10 @@ AudioProcessor.doIt = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "AudioProcessor", "doIt", []]);
 };
 
+AudioProcessor.test = function() {
+  exec(null, null, "AudioProcessor", "test", []]);
+};
+
 module.exports = AudioProcessor;
 
 
