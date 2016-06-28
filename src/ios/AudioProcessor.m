@@ -16,7 +16,7 @@
 }
 
 - (void)test {
-NSLog("test");
+NSLog(@"test");
 }
 
 
