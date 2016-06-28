@@ -3,7 +3,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     id="ionic-audio-processor"
     version="1">
-    <name>Keyboard</name>
+    <name>AudioProcessor</name>
     <description>Audio Processor Plugin</description>
     <license>Apache 2.0</license>
     <keywords>Ionic,Audio</keywords>
