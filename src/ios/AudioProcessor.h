@@ -1,7 +1,8 @@
 #import <Cordova/CDVPlugin.h>
 #import <objc/runtime.h>
 
-@interface AudioProcessor : CDVPlugin  {
+@interface AudioProcessor : CDVPlugin  
+- (void) doIt:(CDVInvokedUrlCommand*)command;
 
 @end
 
