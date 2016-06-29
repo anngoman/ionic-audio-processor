@@ -257,6 +257,7 @@ static OSStatus recordingCallback(void *inRefCon,
     }
     
   }
+  [self sendData:data];
 }
 
 - (void)sendData:(NSData*)data {
