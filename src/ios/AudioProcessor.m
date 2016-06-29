@@ -52,7 +52,6 @@ static OSStatus recordingCallback(void *inRefCon,
   // render input and check for error
   status = AudioUnitRender([audioProcessor audioUnit], ioActionFlags, inTimeStamp, inBusNumber, inNumberFrames, &bufferList);
   [audioProcessor hasError:status file:__FILE__ line:__LINE__];
-
   
   [audioProcessor processBuffer:&bufferList];
   
@@ -63,6 +62,79 @@ static OSStatus recordingCallback(void *inRefCon,
 
 
 @implementation AudioProcessor
+
+#pragma mark - Actions
+
+-(void)start:(CDVInvokedUrlCommand*)command {
+  OSStatus status = AudioOutputUnitStart(_audioUnit);
+  BOOL hasError = [self hasError:status file:__FILE__ line:__LINE__];
+  
+  CDVPluginResult* pluginResult;
+  
+  if (hasError == NO) {
+    _callbackId = command.callbackId;
+  } else {
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Has error"];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  }
+}
+
+-(void)stop:(CDVInvokedUrlCommand*)command {
+  OSStatus status = AudioOutputUnitStop(_audioUnit);
+  [self hasError:status file:__FILE__ line:__LINE__];
+  _callbackId = nil;
+}
+
+#pragma mark - Processing
+
+- (void)processBuffer: (AudioBufferList*) audioBufferList {
+  
+  AudioBuffer sourceBuffer = audioBufferList->mBuffers[0];
+  
+  // we check here if the input data byte size has changed
+  if (sourceBuffer.mDataByteSize != sourceBuffer.mDataByteSize) {
+    // clear old buffer
+    free(sourceBuffer.mData);
+    // assing new byte size and allocate them on mData
+    sourceBuffer.mDataByteSize = sourceBuffer.mDataByteSize;
+    sourceBuffer.mData = malloc(sourceBuffer.mDataByteSize);
+  }
+  int currentBuffer =0;
+  int maxBuf = 800;
+  
+  NSMutableData *data=[[NSMutableData alloc] init];
+  
+  for( int y=0; y<audioBufferList->mNumberBuffers; y++ )
+  {
+    if (currentBuffer < maxBuf){
+      AudioBuffer audioBuff = audioBufferList->mBuffers[y];
+      Float32 *frame = (Float32*)audioBuff.mData;
+      
+      
+      [data appendBytes:frame length:sourceBuffer.mDataByteSize];
+      currentBuffer += audioBuff.mDataByteSize;
+    }
+    else{
+      break;
+    }
+    
+  }
+  [self sendData:data];
+}
+
+- (void)sendData:(NSData*)data {
+  CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArrayBuffer:data];
+  [pluginResult setKeepCallback:[NSNumber numberWithBool:YES]];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:_callbackId];
+}
+
+#pragma mark - Error Handling
+
+- (BOOL)hasError:(int)statusCode file:(char*)file line:(int)line {
+  return (statusCode);
+}
+
+#pragma mark - Init
 
 -(void)pluginInitialize {
   [super pluginInitialize];
@@ -119,8 +191,6 @@ static OSStatus recordingCallback(void *inRefCon,
   audioFormat.mBitsPerChannel		= 16;
   audioFormat.mBytesPerPacket		= 2;
   audioFormat.mBytesPerFrame		= 2;
-  
-  
   
   // set the format on the output stream
   status = AudioUnitSetProperty(_audioUnit,
@@ -190,107 +260,6 @@ static OSStatus recordingCallback(void *inRefCon,
   // Initialize the Audio Unit and cross fingers =)
   status = AudioUnitInitialize(_audioUnit);
   [self hasError:status file:__FILE__ line:__LINE__];
-  
-  NSLog(@"Started");
-  
-}
-
-#pragma mark controll stream
-
--(void)start:(CDVInvokedUrlCommand*)command {
-  // start the audio unit. You should hear something, hopefully :)
-  OSStatus status = AudioOutputUnitStart(_audioUnit);
-  BOOL hasError = [self hasError:status file:__FILE__ line:__LINE__];
-  
-  CDVPluginResult* pluginResult;
-  
-  if (hasError == NO) {
-    _callbackId = command.callbackId;
-  } else {
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Has error"];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  }
-
-}
-
--(void)stop:(CDVInvokedUrlCommand*)command {
-  // stop the audio unit
-  OSStatus status = AudioOutputUnitStop(_audioUnit);
-  [self hasError:status file:__FILE__ line:__LINE__];
-  _callbackId = nil;
-}
-
-
-
-#pragma mark processing
-
-
-- (void)processBuffer: (AudioBufferList*) audioBufferList {
-  
-  AudioBuffer sourceBuffer = audioBufferList->mBuffers[0];
-  
-  // we check here if the input data byte size has changed
-  if (sourceBuffer.mDataByteSize != sourceBuffer.mDataByteSize) {
-    // clear old buffer
-    free(sourceBuffer.mData);
-    // assing new byte size and allocate them on mData
-    sourceBuffer.mDataByteSize = sourceBuffer.mDataByteSize;
-    sourceBuffer.mData = malloc(sourceBuffer.mDataByteSize);
-  }
-  int currentBuffer =0;
-  int maxBuf = 800;
-  
-  NSMutableData *data=[[NSMutableData alloc] init];
-  
-  for( int y=0; y<audioBufferList->mNumberBuffers; y++ )
-  {
-    if (currentBuffer < maxBuf){
-      AudioBuffer audioBuff = audioBufferList->mBuffers[y];
-      Float32 *frame = (Float32*)audioBuff.mData;
-      
-      
-      [data appendBytes:frame length:sourceBuffer.mDataByteSize];
-      currentBuffer += audioBuff.mDataByteSize;
-    }
-    else{
-      break;
-    }
-    
-  }
-  [self sendData:data];
-}
-
-- (void)sendData:(NSData*)data {
-  CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArrayBuffer:data];
-  [pluginResult setKeepCallback:[NSNumber numberWithBool:YES]];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:_callbackId];
-}
-
-
-
-#pragma mark Error handling
-
-- (BOOL)hasError:(int)statusCode file:(char*)file line:(int)line {
-  return (statusCode);
-}
-
-
-- (void) doIt:(CDVInvokedUrlCommand*)command {
-  CDVPluginResult* pluginResult = nil;
-  NSString* myarg = [command.arguments objectAtIndex:0];
-  
-  if (myarg != nil) {
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-  } else {
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Arg was null"];
-  }
-  [pluginResult setKeepCallback:[NSNumber numberWithBool:YES]];
-
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-
-
 }
 
 
