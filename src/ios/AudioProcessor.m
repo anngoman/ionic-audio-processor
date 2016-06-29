@@ -9,7 +9,7 @@
 #define SAMPLE_RATE 44100.00
 
 @interface AudioProcessor()
-@property (nonatomic, strong) CDVInvokedUrlCommand* command;
+@property (nonatomic, strong) NSString* callbackId;
 @property (assign) AudioBuffer audioBuffer;
 @property (assign) AudioComponentInstance audioUnit;
 
@@ -205,10 +205,10 @@ static OSStatus recordingCallback(void *inRefCon,
   CDVPluginResult* pluginResult;
   
   if (hasError == NO) {
-    _command = command;
+    _callbackId = command.callbackId;
   } else {
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Has error"];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:_command.callbackId];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
   }
 
 }
@@ -217,7 +217,7 @@ static OSStatus recordingCallback(void *inRefCon,
   // stop the audio unit
   OSStatus status = AudioOutputUnitStop(_audioUnit);
   [self hasError:status file:__FILE__ line:__LINE__];
-  _command = nil;
+  _callbackId = nil;
 }
 
 
@@ -262,7 +262,8 @@ static OSStatus recordingCallback(void *inRefCon,
 
 - (void)sendData:(NSData*)data {
   CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArrayBuffer:data];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:_command.callbackId];
+  [pluginResult setKeepCallback:[NSNumber numberWithBool:YES]];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:_callbackId];
 }
 
 
