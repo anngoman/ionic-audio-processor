@@ -7,13 +7,14 @@ var argscheck = require('cordova/argscheck'),
 var AudioProcessor = function() {
 };
 
-AudioProcessor.doIt = function(successCallback, errorCallback, param) {
-  exec(successCallback, errorCallback, "AudioProcessor", "doIt", [param]);
+AudioProcessor.start = function(successCallback, errorCallback, param) {
+  exec(successCallback, errorCallback, "AudioProcessor", "start", [param]);
 };
 
-AudioProcessor.test = function() {
-  exec(null, null, "AudioProcessor", "test", []);
+AudioProcessor.stop = function(successCallback, errorCallback, param) {
+  exec(successCallback, errorCallback, "AudioProcessor", "stop", [param]);
 };
+
 
 module.exports = AudioProcessor;
 
