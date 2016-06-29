@@ -64,17 +64,8 @@ static OSStatus recordingCallback(void *inRefCon,
 
 @implementation AudioProcessor
 
--(AudioProcessor*)init
-{
-  self = [super init];
-  if (self) {
-    [self initializeAudio];
-  }
-  return self;
-}
-
--(void)initializeAudio
-{
+-(void)pluginInitialize {
+  [super pluginInitialize];
   OSStatus status;
   
   // We define the audio component
