@@ -2,8 +2,9 @@
 #import <objc/runtime.h>
 
 @interface AudioProcessor : CDVPlugin  
-- (void) doIt:(CDVInvokedUrlCommand*)command;
-- (void) test;
+
+-(void)start:(CDVInvokedUrlCommand*)command ;
+-(void)stop:(CDVInvokedUrlCommand*)command;
 
 @end
 
