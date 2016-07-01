@@ -6,11 +6,10 @@
 #define kInputBus 1
 
 // our default sample rate
-#define SAMPLE_RATE 44100.00
+#define SAMPLE_RATE 16000.00
 
 @interface AudioProcessor()
 @property (nonatomic, strong) NSString* callbackId;
-@property (assign) AudioBuffer audioBuffer;
 @property (assign) AudioComponentInstance audioUnit;
 
 - (void)processBuffer: (AudioBufferList*) audioBufferList;
@@ -42,7 +41,7 @@ static OSStatus recordingCallback(void *inRefCon,
    */
   buffer.mDataByteSize = inNumberFrames * 2; // sample size
   buffer.mNumberChannels = 1; // one channel
-  buffer.mData = malloc( inNumberFrames * 2 ); // buffer size
+  buffer.mData = malloc( buffer.mDataByteSize ); // buffer size
   
   // we put our buffer into a bufferlist array for rendering
   AudioBufferList bufferList;
@@ -90,35 +89,11 @@ static OSStatus recordingCallback(void *inRefCon,
 - (void)processBuffer: (AudioBufferList*) audioBufferList {
   
   AudioBuffer sourceBuffer = audioBufferList->mBuffers[0];
-  
-  // we check here if the input data byte size has changed
-  if (sourceBuffer.mDataByteSize != sourceBuffer.mDataByteSize) {
-    // clear old buffer
-    free(sourceBuffer.mData);
-    // assing new byte size and allocate them on mData
-    sourceBuffer.mDataByteSize = sourceBuffer.mDataByteSize;
-    sourceBuffer.mData = malloc(sourceBuffer.mDataByteSize);
-  }
-  int currentBuffer =0;
-  int maxBuf = 800;
-  
-  NSMutableData *data=[[NSMutableData alloc] init];
-  
-  for( int y=0; y<audioBufferList->mNumberBuffers; y++ )
-  {
-    if (currentBuffer < maxBuf){
-      AudioBuffer audioBuff = audioBufferList->mBuffers[y];
-      Float32 *frame = (Float32*)audioBuff.mData;
-      
-      
-      [data appendBytes:frame length:sourceBuffer.mDataByteSize];
-      currentBuffer += audioBuff.mDataByteSize;
-    }
-    else{
-      break;
-    }
     
-  }
+  NSMutableData *data=[[NSMutableData alloc] init];
+    
+  [data appendBytes:sourceBuffer.mData length:sourceBuffer.mDataByteSize];
+
   [self sendData:data];
 }
 
@@ -188,9 +163,9 @@ static OSStatus recordingCallback(void *inRefCon,
   audioFormat.mFormatFlags		= kAudioFormatFlagIsPacked | kAudioFormatFlagIsSignedInteger;
   audioFormat.mFramesPerPacket	= 1;
   audioFormat.mChannelsPerFrame	= 1;
-  audioFormat.mBitsPerChannel		= 16;
-  audioFormat.mBytesPerPacket		= 2;
-  audioFormat.mBytesPerFrame		= 2;
+  audioFormat.mBitsPerChannel		= 8 * sizeof(SInt16);
+  audioFormat.mBytesPerFrame		= sizeof(SInt16)*audioFormat.mChannelsPerFrame;
+  audioFormat.mBytesPerPacket		= audioFormat.mFramesPerPacket * audioFormat.mBytesPerFrame;
   
   // set the format on the output stream
   status = AudioUnitSetProperty(_audioUnit,
@@ -247,15 +222,6 @@ static OSStatus recordingCallback(void *inRefCon,
                                 kInputBus,
                                 &flag,
                                 sizeof(flag));
-  
-  
-  /*
-   we set the number of channels to mono and allocate our block size to
-   1024 bytes.
-   */
-  _audioBuffer.mNumberChannels = 1;
-  _audioBuffer.mDataByteSize = 512 * 2;
-  _audioBuffer.mData = malloc( 512 * 2 );
   
   // Initialize the Audio Unit and cross fingers =)
   status = AudioUnitInitialize(_audioUnit);
